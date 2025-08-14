@@ -2,12 +2,18 @@
 import 'leaflet/dist/leaflet.css'
 import dynamic from 'next/dynamic'
 import { Marker, Popup } from 'react-leaflet'
-import L from 'leaflet'
+import { divIcon } from 'leaflet'
 
-const MapContainer = dynamic(() => import('react-leaflet').then(m => m.MapContainer), { ssr: false })
-const TileLayer = dynamic(() => import('react-leaflet').then(m => m.TileLayer), { ssr: false })
+const MapContainer = dynamic(
+  () => import('react-leaflet').then((m) => m.MapContainer),
+  { ssr: false }
+)
+const TileLayer = dynamic(
+  () => import('react-leaflet').then((m) => m.TileLayer),
+  { ssr: false }
+)
 
-const youIcon = L.divIcon({
+const youIcon = divIcon({
   className: 'you-marker',
   html: '<div style="width:12px;height:12px;border:2px solid #000;border-radius:50%;background:#fff;"></div>',
   iconSize: [12, 12],
