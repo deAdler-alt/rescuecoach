@@ -1,7 +1,18 @@
-import type { NextConfig } from "next";
+// next.config.ts
+import withPWA from '@ducanh2912/next-pwa'
+import type { NextConfig } from 'next'
 
-const nextConfig: NextConfig = {
-  /* config options here */
-};
+const baseConfig: NextConfig = {
+  reactStrictMode: true,
+}
 
-export default nextConfig;
+export default withPWA({
+  dest: 'public',
+  register: true,
+  skipWaiting: true,
+  cacheOnFrontEndNav: true,
+  aggressiveFrontEndNavCaching: true,
+  workboxOptions: {
+    maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
+  },
+})(baseConfig)
