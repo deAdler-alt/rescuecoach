@@ -60,20 +60,38 @@ export default function ScanPage() {
     }
   }
 
+  const onClear = () => {
+    setImg(null)
+    setText('')
+    setError(null)
+    setProgress(0)
+  }
+
   return (
     <main className="p-6 max-w-xl mx-auto space-y-4">
       <h1 className="text-2xl font-bold">Skanuj lek (OCR)</h1>
 
-      <label className="block">
-        <span className="sr-only">Wybierz zdjęcie opakowania</span>
-        <input
-          type="file"
-          accept="image/*"
-          capture="environment"
-          onChange={onFile}
-          aria-label="Wybierz zdjęcie opakowania"
-        />
-      </label>
+      <div className="flex items-center gap-3">
+        <label className="block">
+          <span className="sr-only">Wybierz zdjęcie opakowania</span>
+          <input
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={onFile}
+            aria-label="Wybierz zdjęcie opakowania"
+          />
+        </label>
+
+        <button
+          type="button"
+          onClick={onClear}
+          className="px-3 py-2 rounded border hover:shadow focus:outline-none focus:ring-2 focus:ring-black disabled:opacity-50"
+          disabled={!img && !text && !error && progress === 0}
+        >
+          Wyczyść
+        </button>
+      </div>
 
       {img && <img src={img} alt="Podgląd zdjęcia do OCR" className="rounded-xl border" />}
 
