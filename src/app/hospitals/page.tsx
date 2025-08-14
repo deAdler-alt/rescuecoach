@@ -2,12 +2,14 @@
 import { useEffect, useState } from 'react'
 import Map from '@/components/Map'
 
-type OSMElement = {
-  id: number
-  tags?: Record<string, string>
-  lat?: number
-  lon?: number
-  center?: { lat: number; lon: number }
+type OSMTags = Record<string, string>
+type OSMCenter = { lat: number; lon: number }
+type OSMElementNode = { id: number; type: 'node'; lat: number; lon: number; tags?: OSMTags }
+type OSMElementWayRel = { id: number; type: 'way' | 'relation'; center?: OSMCenter; tags?: OSMTags }
+type OSMElement = OSMElementNode | OSMElementWayRel
+
+function isNode(e: OSMElement): e is OSMElementNode {
+  return (e as OSMElementNode).lat !== undefined && (e as OSMElementNode).lon !== undefined
 }
 
 export default function Hospitals() {
@@ -40,14 +42,14 @@ export default function Hospitals() {
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
           body: new URLSearchParams({ data: query })
         })
-        const data = await res.json()
-        const list: OSMElement[] = data?.elements || []
+        const data = (await res.json()) as { elements?: OSMElement[] }
+        const list = data?.elements ?? []
         setPlaces(list)
         localStorage.setItem('hospitals_cache', JSON.stringify(list))
-      } catch (e: any) {
+      } catch {
         setErr('Problem z Overpass API — pokazuję ostatnio zapisane dane')
         const cached = localStorage.getItem('hospitals_cache')
-        if (cached) setPlaces(JSON.parse(cached))
+        if (cached) setPlaces(JSON.parse(cached) as OSMElement[])
       } finally {
         setLoading(false)
       }
@@ -65,10 +67,10 @@ export default function Hospitals() {
 
       <ul className="space-y-2">
         {places.map((e) => {
-          const center = e.center || (('lat' in e && 'lon' in e) ? { lat: (e as any).lat, lon: (e as any).lon } : undefined)
+          const center = isNode(e) ? { lat: e.lat, lon: e.lon } : e.center
           return (
             <li key={e.id} className="p-3 rounded-xl border">
-              <div className="font-medium">{e.tags?.name || 'Szpital'}</div>
+              <div className="font-medium">{e.tags?.name ?? 'Szpital'}</div>
               <div className="text-sm opacity-70">
                 {center ? `${center.lat.toFixed(5)}, ${center.lon.toFixed(5)}` : ''}
               </div>

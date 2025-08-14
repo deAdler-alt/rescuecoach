@@ -1,6 +1,7 @@
 'use client'
+/* eslint-disable-next-line @next/next/no-img-element */ // pojedynczo dopuszczamy <img> dla dataURL
 import { useState } from 'react'
-import Tesseract from 'tesseract.js'
+import Tesseract, { type LoggerMessage, type RecognizeResult } from 'tesseract.js'
 
 function fileToDataURL(file: File): Promise<string> {
   return new Promise((resolve) => {
@@ -13,13 +14,14 @@ function fileToDataURL(file: File): Promise<string> {
 async function resizeDataURL(dataURL: string, maxSize = 1280): Promise<string> {
   const img = document.createElement('img')
   img.src = dataURL
-  await new Promise((r) => (img.onload = () => r(null)))
+  await new Promise<void>((resolve) => { img.onload = () => resolve() })
   const { width, height } = img
   const scale = Math.min(1, maxSize / Math.max(width, height))
   const canvas = document.createElement('canvas')
   canvas.width = Math.round(width * scale)
   canvas.height = Math.round(height * scale)
-  const ctx = canvas.getContext('2d')!
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return dataURL
   ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
   return canvas.toDataURL('image/jpeg', 0.9)
 }
@@ -44,17 +46,19 @@ export default function ScanPage() {
       const resized = await resizeDataURL(dataURL, 1280)
       setImg(resized)
 
-      const result = await Tesseract.recognize(resized, 'eng', {
-        logger: (m) => {
+      const result: RecognizeResult = await Tesseract.recognize(resized, 'eng', {
+        logger: (m: LoggerMessage) => {
           if (m.status === 'recognizing text' && typeof m.progress === 'number') {
             setProgress(Math.round(m.progress * 100))
           }
         },
       })
-
       setText(result.data.text.trim())
-    } catch (err: any) {
-      setError(err?.message || 'Błąd OCR')
+    } catch (err: unknown) {
+      let msg = 'Błąd OCR'
+      if (err instanceof Error) msg = err.message
+      else if (typeof err === 'string') msg = err
+      setError(msg)
     } finally {
       setLoading(false)
     }
@@ -93,7 +97,10 @@ export default function ScanPage() {
         </button>
       </div>
 
-      {img && <img src={img} alt="Podgląd zdjęcia do OCR" className="rounded-xl border" />}
+      {img && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={img} alt="Podgląd zdjęcia do OCR" className="rounded-xl border" />
+      )}
 
       {loading && (
         <div aria-live="polite" className="space-y-1">

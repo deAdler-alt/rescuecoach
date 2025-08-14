@@ -1,39 +1,60 @@
 'use client'
-import { useEffect, useState } from 'react'
-import { CreateMLCEngine } from '@mlc-ai/web-llm'
+import { useEffect, useMemo, useState } from 'react'
+import * as webllm from '@mlc-ai/web-llm'
 
 type Msg = { role: 'user' | 'assistant'; content: string }
 
 export default function Coach() {
   const [supported, setSupported] = useState<boolean | null>(null)
-  const [engine, setEngine] = useState<any>(null)
+  const [engine, setEngine] = useState<webllm.MLCEngineInterface | null>(null)
   const [loading, setLoading] = useState(false)
-  const [modelReady, setModelReady] = useState(false)
+  const [progress, setProgress] = useState(0)
+  const [modelId, setModelId] = useState<string | null>(null)
   const [input, setInput] = useState('')
   const [msgs, setMsgs] = useState<Msg[]>([
     { role: 'assistant', content: 'Cześć! Opisz krótko sytuację, a podam kroki pierwszej pomocy.' }
   ])
 
+  const pickModel = useMemo(() => {
+    const list = (webllm.prebuiltAppConfig.model_list ?? []).map(m => m.model_id)
+    const prefs = [
+      'Llama-3.2-1B-Instruct',
+      'Qwen2.5-0.5B',
+      'Phi-3',
+      'Qwen2.5-1.5B',
+      'Qwen2.5-3B',
+      'Llama-3.1-8B',
+    ]
+    for (const p of prefs) {
+      const found = list.find(id => id.includes(p))
+      if (found) return found
+    }
+    return list[0] ?? null
+  }, [])
+
   useEffect(() => {
-    const ok = typeof navigator !== 'undefined' && !!(navigator as any).gpu
+    const ok = typeof navigator !== 'undefined' && !!(navigator as unknown as { gpu?: unknown }).gpu
     setSupported(ok)
+    if (!ok) return
 
     ;(async () => {
-      if (!ok) return
-      setLoading(true)
       try {
-        const e = await CreateMLCEngine({
-          model: 'Qwen2.5-3B-Instruct-q4f32_1',
+        const chosen = pickModel
+        if (!chosen) return
+        setModelId(chosen)
+        setLoading(true)
+
+        const e = await webllm.CreateMLCEngine(chosen, {
+          initProgressCallback: (r: webllm.InitProgressReport) => {
+            if (typeof r.progress === 'number') setProgress(Math.round(r.progress * 100))
+          },
         })
         setEngine(e)
-        setModelReady(true)
-      } catch (err) {
-        console.error(err)
       } finally {
         setLoading(false)
       }
     })()
-  }, [])
+  }, [pickModel])
 
   const ask = async () => {
     if (!engine || !input.trim()) return
@@ -42,14 +63,14 @@ export default function Coach() {
     setInput('')
 
     const sys = 'Jesteś trenerem pierwszej pomocy. Odpowiadaj krótko, w punktach, po polsku.'
-    const resp = await engine.chat.completions.create({
+    const reply = await engine.chat.completions.create({
       messages: [
         { role: 'system', content: sys },
         ...msgs,
         userMsg
-      ]
+      ],
     })
-    const text = resp.choices?.[0]?.message?.content || '…'
+    const text = reply.choices?.[0]?.message?.content ?? '…'
     setMsgs((m) => [...m, { role: 'assistant', content: text }])
   }
 
@@ -57,7 +78,7 @@ export default function Coach() {
     return (
       <main className="p-6 max-w-2xl mx-auto space-y-3">
         <h1 className="text-2xl font-bold">RescueCoach (LLM offline)</h1>
-        <p>Twoja przeglądarka nie wspiera WebGPU. Spróbuj w Chrome/Edge 113+ lub na desktopie z włączonym WebGPU.</p>
+        <p>Twoja przeglądarka nie wspiera WebGPU. Spróbuj w Chrome/Edge 113+ lub na desktopie z WebGPU.</p>
       </main>
     )
   }
@@ -66,8 +87,15 @@ export default function Coach() {
     <main className="p-6 max-w-2xl mx-auto space-y-4">
       <h1 className="text-2xl font-bold">RescueCoach (LLM offline)</h1>
 
-      {loading && <p>Ładuję model… pierwsze uruchomienie może potrwać ⏳</p>}
-      {!loading && !modelReady && <p>Inicjalizacja…</p>}
+      {loading && (
+        <div aria-live="polite" className="space-y-1">
+          <p>Ładuję model{modelId ? `: ${modelId}` : ''}…</p>
+          <div className="w-full h-2 bg-gray-200 rounded">
+            <div className="h-2 bg-black rounded" style={{ width: `${progress}%`, transition: 'width .2s' }} />
+          </div>
+          <p className="text-sm opacity-70">{progress}% — pierwsze uruchomienie pobiera pliki, potem działa z cache.</p>
+        </div>
+      )}
 
       <div className="space-y-3">
         <div className="space-y-2 p-3 rounded-xl border bg-white">
@@ -92,15 +120,15 @@ export default function Coach() {
           <button
             className="px-4 py-2 rounded-xl border"
             onClick={ask}
-            disabled={!modelReady || !input.trim()}
-            aria-disabled={!modelReady || !input.trim()}
+            disabled={!engine || !input.trim()}
+            aria-disabled={!engine || !input.trim()}
           >
             Wyślij
           </button>
         </div>
 
-        {!loading && modelReady && (
-          <p className="text-sm opacity-70">Model wczytany lokalnie – brak kosztów API.</p>
+        {engine && modelId && (
+          <p className="text-sm opacity-70">Model: {modelId} — działa lokalnie, bez kosztów API.</p>
         )}
       </div>
     </main>
