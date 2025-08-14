@@ -7,7 +7,7 @@ const baseConfig: NextConfig = {
 }
 
 const runtimeCaching = [
-  // Strony (HTML) – cache'uj nawigacje
+
   {
     urlPattern: ({ request }: any) => request.mode === 'navigate',
     handler: 'NetworkFirst',
@@ -16,7 +16,7 @@ const runtimeCaching = [
       expiration: { maxEntries: 50, maxAgeSeconds: 7 * 24 * 60 * 60 },
     },
   },
-  // Assety (js/css/img/font)
+
   {
     urlPattern: ({ request }: any) =>
       ['style', 'script', 'image', 'font'].includes(request.destination),
