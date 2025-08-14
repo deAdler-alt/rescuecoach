@@ -1,5 +1,6 @@
-export const dynamic = 'force-dynamic'
 'use client'
+export const dynamic = 'force-dynamic'
+
 import { useEffect, useState } from 'react'
 import Map from '@/components/Map'
 
@@ -63,9 +64,7 @@ export default function Hospitals() {
       {err && <p role="alert" className="text-red-600">{err}</p>}
       {!pos && !err && <p>Pobieram Twoją lokalizację…</p>}
       {pos && <Map lat={pos.lat} lon={pos.lon} />}
-
       {loading && <p>Ładuję listę placówek…</p>}
-
       <ul className="space-y-2">
         {places.map((e) => {
           const center = isNode(e) ? { lat: e.lat, lon: e.lon } : e.center
