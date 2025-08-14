@@ -1,5 +1,4 @@
 'use client'
-/* eslint-disable-next-line @next/next/no-img-element */ // pojedynczo dopuszczamy <img> dla dataURL
 import { useState } from 'react'
 import Tesseract, { type LoggerMessage, type RecognizeResult } from 'tesseract.js'
 
@@ -98,7 +97,6 @@ export default function ScanPage() {
       </div>
 
       {img && (
-        // eslint-disable-next-line @next/next/no-img-element
         <img src={img} alt="Podgląd zdjęcia do OCR" className="rounded-xl border" />
       )}
 
