@@ -9,7 +9,6 @@ const baseConfig: NextConfig = {
 export default withPWA({
   dest: 'public',
   register: true,
-  skipWaiting: true,
   cacheOnFrontEndNav: true,
   aggressiveFrontEndNavCaching: true,
   workboxOptions: {
