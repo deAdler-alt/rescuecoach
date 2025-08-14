@@ -2,26 +2,11 @@
 import 'leaflet/dist/leaflet.css'
 import dynamic from 'next/dynamic'
 
-const MapContainer = dynamic(
-  () => import('react-leaflet').then(m => m.MapContainer),
-  { ssr: false }
-)
-const TileLayer = dynamic(
-  () => import('react-leaflet').then(m => m.TileLayer),
-  { ssr: false }
-)
-const Marker = dynamic(
-  () => import('react-leaflet').then(m => m.Marker),
-  { ssr: false }
-)
-const Popup = dynamic(
-  () => import('react-leaflet').then(m => m.Popup),
-  { ssr: false }
-)
-const CircleMarker = dynamic(
-  () => import('react-leaflet').then(m => m.CircleMarker),
-  { ssr: false }
-)
+const MapContainer = dynamic(() => import('react-leaflet').then(m => m.MapContainer), { ssr: false })
+const TileLayer    = dynamic(() => import('react-leaflet').then(m => m.TileLayer), { ssr: false })
+const Marker       = dynamic(() => import('react-leaflet').then(m => m.Marker), { ssr: false })
+const Popup        = dynamic(() => import('react-leaflet').then(m => m.Popup), { ssr: false })
+const CircleMarker = dynamic(() => import('react-leaflet').then(m => m.CircleMarker), { ssr: false })
 
 export default function Map({ lat, lon }: { lat: number; lon: number }) {
   return (
