@@ -22,7 +22,7 @@ export default function Hospitals() {
 
   useEffect(() => {
     if (!navigator.geolocation) {
-      setErr('Brak wsparcia geolokacji w przeglądarce')
+      setErr('Geolocation is not supported by this browser.')
       return
     }
     navigator.geolocation.getCurrentPosition(async (p) => {
@@ -49,28 +49,30 @@ export default function Hospitals() {
         setPlaces(list)
         localStorage.setItem('hospitals_cache', JSON.stringify(list))
       } catch {
-        setErr('Problem z Overpass API — pokazuję ostatnio zapisane dane')
+        setErr('Overpass API issue — showing last cached results.')
         const cached = localStorage.getItem('hospitals_cache')
         if (cached) setPlaces(JSON.parse(cached) as OSMElement[])
       } finally {
         setLoading(false)
       }
-    }, () => setErr('Odmówiono dostępu do lokalizacji'))
+    }, () => setErr('Location permission denied.'))
   }, [])
 
   return (
     <main className="p-6 space-y-4">
-      <h1 className="text-2xl font-bold">Najbliższe szpitale</h1>
+      <h1 className="text-2xl font-bold">Nearby hospitals</h1>
       {err && <p role="alert" className="text-red-600">{err}</p>}
-      {!pos && !err && <p>Pobieram Twoją lokalizację…</p>}
+      {!pos && !err && <p>Getting your location…</p>}
       {pos && <Map lat={pos.lat} lon={pos.lon} />}
-      {loading && <p>Ładuję listę placówek…</p>}
+
+      {loading && <p>Loading facilities…</p>}
+
       <ul className="space-y-2">
         {places.map((e) => {
           const center = isNode(e) ? { lat: e.lat, lon: e.lon } : e.center
           return (
             <li key={e.id} className="p-3 rounded-xl border">
-              <div className="font-medium">{e.tags?.name ?? 'Szpital'}</div>
+              <div className="font-medium">{e.tags?.name ?? 'Hospital'}</div>
               <div className="text-sm opacity-70">
                 {center ? `${center.lat.toFixed(5)}, ${center.lon.toFixed(5)}` : ''}
               </div>

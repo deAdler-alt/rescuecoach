@@ -1,4 +1,4 @@
-// app/page.tsx
+// src/app/page.tsx
 import Link from "next/link";
 
 function Tile({ href, title, desc }: { href: string; title: string; desc: string }) {
@@ -18,16 +18,16 @@ export default function Home() {
     <main id="content" className="mx-auto max-w-5xl p-6 space-y-6">
       <h1 className="text-3xl font-bold">RescueCoach</h1>
       <p className="opacity-80">
-        Szybkie instrukcje pierwszej pomocy, skan leków (OCR), najbliższe szpitale i coach offline (LLM).
+        Quick first-aid guidance, OCR for labels, nearest hospitals, and an on-device coach.
       </p>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Tile href="/coach" title="Coach (LLM)" desc="Asystent pierwszej pomocy offline" />
-        <Tile href="/guide" title="Instrukcje" desc="Kroki postępowania + wyszukiwarka" />
-        <Tile href="/scan" title="Skan leku (OCR)" desc="Rozpoznaj tekst z opakowania" />
-        <Tile href="/hospitals" title="Szpitale" desc="Najbliższe placówki służby zdrowia" />
-        <Tile href="/report" title="Zgłoś incydent" desc="Wyślij zgłoszenie (demo, DB)" />
-        <Tile href="/feedback" title="Feedback" desc="Podziel się opinią" />
+        <Tile href="/coach" title="Coach (LLM)" desc="On-device first-aid assistant" />
+        <Tile href="/guide" title="Guide" desc="Step-by-step procedures with search" />
+        <Tile href="/scan" title="Scan (OCR)" desc="Recognize text from a label/photo" />
+        <Tile href="/hospitals" title="Hospitals" desc="Nearest healthcare facilities" />
+        <Tile href="/report" title="Report incident" desc="Send a demo incident to DB" />
+        <Tile href="/feedback" title="Feedback" desc="Share your thoughts" />
       </div>
     </main>
   );

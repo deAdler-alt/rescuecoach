@@ -54,7 +54,7 @@ export default function ScanPage() {
       })
       setText(result.data.text.trim())
     } catch (err: unknown) {
-      let msg = 'Błąd OCR'
+      let msg = 'OCR error'
       if (err instanceof Error) msg = err.message
       else if (typeof err === 'string') msg = err
       setError(msg)
@@ -72,17 +72,17 @@ export default function ScanPage() {
 
   return (
     <main className="p-6 max-w-xl mx-auto space-y-4">
-      <h1 className="text-2xl font-bold">Skanuj lek (OCR)</h1>
+      <h1 className="text-2xl font-bold">Scan (OCR)</h1>
 
       <div className="flex items-center gap-3">
         <label className="block">
-          <span className="sr-only">Wybierz zdjęcie opakowania</span>
+          <span className="sr-only">Choose an image</span>
           <input
             type="file"
             accept="image/*"
             capture="environment"
             onChange={onFile}
-            aria-label="Wybierz zdjęcie opakowania"
+            aria-label="Choose image to scan"
           />
         </label>
 
@@ -92,17 +92,17 @@ export default function ScanPage() {
           className="px-3 py-2 rounded border hover:shadow focus:outline-none focus:ring-2 focus:ring-black disabled:opacity-50"
           disabled={!img && !text && !error && progress === 0}
         >
-          Wyczyść
+          Clear
         </button>
       </div>
 
       {img && (
-        <img src={img} alt="Podgląd zdjęcia do OCR" className="rounded-xl border" />
+        <img src={img} alt="Preview to OCR" className="rounded-xl border" />
       )}
 
       {loading && (
         <div aria-live="polite" className="space-y-1">
-          <p>Rozpoznaję tekst…</p>
+          <p>Recognizing text…</p>
           <div className="w-full h-2 bg-gray-200 rounded">
             <div
               className="h-2 bg-black rounded"
@@ -117,7 +117,7 @@ export default function ScanPage() {
 
       {!!text && (
         <>
-          <h2 className="font-semibold">Wynik</h2>
+          <h2 className="font-semibold">Result</h2>
           <pre className="whitespace-pre-wrap p-3 rounded-xl border bg-white">{text}</pre>
         </>
       )}
