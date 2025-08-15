@@ -1,6 +1,9 @@
 'use client'
+import Image from 'next/image'
 import { useState } from 'react'
 import Tesseract, { type LoggerMessage, type RecognizeResult } from 'tesseract.js'
+
+type ImgData = { url: string; width: number; height: number }
 
 function fileToDataURL(file: File): Promise<string> {
   return new Promise((resolve) => {
@@ -10,7 +13,7 @@ function fileToDataURL(file: File): Promise<string> {
   })
 }
 
-async function resizeDataURL(dataURL: string, maxSize = 1280): Promise<string> {
+async function resizeToDataURLWithDims(dataURL: string, maxSize = 1280): Promise<ImgData> {
   const img = document.createElement('img')
   img.src = dataURL
   await new Promise<void>((resolve) => { img.onload = () => resolve() })
@@ -20,13 +23,13 @@ async function resizeDataURL(dataURL: string, maxSize = 1280): Promise<string> {
   canvas.width = Math.round(width * scale)
   canvas.height = Math.round(height * scale)
   const ctx = canvas.getContext('2d')
-  if (!ctx) return dataURL
+  if (!ctx) return { url: dataURL, width, height }
   ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
-  return canvas.toDataURL('image/jpeg', 0.9)
+  return { url: canvas.toDataURL('image/jpeg', 0.9), width: canvas.width, height: canvas.height }
 }
 
 export default function ScanPage() {
-  const [img, setImg] = useState<string | null>(null)
+  const [img, setImg] = useState<ImgData | null>(null)
   const [text, setText] = useState<string>('')
   const [progress, setProgress] = useState<number>(0)
   const [loading, setLoading] = useState(false)
@@ -42,10 +45,10 @@ export default function ScanPage() {
 
     try {
       const dataURL = await fileToDataURL(file)
-      const resized = await resizeDataURL(dataURL, 1280)
+      const resized = await resizeToDataURLWithDims(dataURL, 1280)
       setImg(resized)
 
-      const result: RecognizeResult = await Tesseract.recognize(resized, 'eng', {
+      const result: RecognizeResult = await Tesseract.recognize(resized.url, 'eng', {
         logger: (m: LoggerMessage) => {
           if (m.status === 'recognizing text' && typeof m.progress === 'number') {
             setProgress(Math.round(m.progress * 100))
@@ -97,7 +100,16 @@ export default function ScanPage() {
       </div>
 
       {img && (
-        <img src={img} alt="Preview to OCR" className="rounded-xl border" />
+        <div className="rounded-xl border overflow-hidden">
+          <Image
+            src={img.url}
+            alt="Preview to OCR"
+            width={img.width}
+            height={img.height}
+            className="h-auto w-full"
+            unoptimized
+          />
+        </div>
       )}
 
       {loading && (
@@ -118,7 +130,7 @@ export default function ScanPage() {
       {!!text && (
         <>
           <h2 className="font-semibold">Result</h2>
-          <pre className="whitespace-pre-wrap p-3 rounded-xl border bg-white">{text}</pre>
+        <pre className="whitespace-pre-wrap p-3 rounded-xl border bg-white">{text}</pre>
         </>
       )}
     </main>
