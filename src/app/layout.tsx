@@ -2,6 +2,10 @@
 import "./globals.css"
 import type { Metadata, Viewport } from "next"
 import MainNav from "@/components/MainNav"
+import { Toaster } from "sonner"
+import { Inter } from "next/font/google"
+
+const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "RescueCoach",
@@ -13,9 +17,7 @@ export const metadata: Metadata = {
   ],
 }
 
-export const viewport: Viewport = {
-  themeColor: "#0ea5e9",
-}
+export const viewport: Viewport = { themeColor: "#0ea5e9" }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -23,7 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link rel="manifest" href="/manifest.webmanifest" />
       </head>
-      <body className="bg-white text-black">
+      <body className={`${inter.className} bg-slate-50 text-slate-900 antialiased`}>
         <a
           href="#content"
           className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:px-3 focus:py-2 focus:rounded-md focus:bg-white focus:border focus:shadow"
@@ -31,7 +33,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Skip to content
         </a>
         <MainNav />
-        {children}
+        <div className="container mx-auto max-w-5xl px-4">{children}</div>
+        <Toaster richColors position="top-right" />
       </body>
     </html>
   )
