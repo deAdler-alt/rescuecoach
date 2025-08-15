@@ -1,6 +1,6 @@
 import "./globals.css"
 import type { Metadata, Viewport } from "next"
-import MainNav from "../../components/MainNav"
+import MainNav from "../components/MainNav"
 
 export const metadata: Metadata = {
   title: 'RescueCoach',
