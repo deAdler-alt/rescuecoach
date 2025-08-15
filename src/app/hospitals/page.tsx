@@ -1,8 +1,9 @@
 'use client'
 export const dynamic = 'force-dynamic'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Map from '@/components/Map'
+import { toast } from 'sonner'
 
 type OSMTags = Record<string, string>
 type OSMCenter = { lat: number; lon: number }
@@ -10,24 +11,32 @@ type OSMElementNode = { id: number; type: 'node'; lat: number; lon: number; tags
 type OSMElementWayRel = { id: number; type: 'way' | 'relation'; center?: OSMCenter; tags?: OSMTags }
 type OSMElement = OSMElementNode | OSMElementWayRel
 
-function isNode(e: OSMElement): e is OSMElementNode {
-  return (e as OSMElementNode).lat !== undefined && (e as OSMElementNode).lon !== undefined
+const isNode = (e: OSMElement): e is OSMElementNode =>
+  (e as OSMElementNode).lat !== undefined && (e as OSMElementNode).lon !== undefined
+
+function km(aLat: number, aLon: number, bLat: number, bLon: number): number {
+  const R = 6371e3
+  const φ1 = aLat * Math.PI/180, φ2 = bLat * Math.PI/180
+  const Δφ = (bLat-aLat) * Math.PI/180
+  const Δλ = (bLon-aLon) * Math.PI/180
+  const s = Math.sin(Δφ/2)**2 + Math.cos(φ1)*Math.cos(φ2)*Math.sin(Δλ/2)**2
+  const d = 2*R*Math.asin(Math.sqrt(s))
+  return d/1000
 }
+
+type WithDist = { e: OSMElement; d: number }
 
 export default function Hospitals() {
   const [pos, setPos] = useState<{ lat: number; lon: number } | null>(null)
   const [places, setPlaces] = useState<OSMElement[]>([])
-  const [err, setErr] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     if (!navigator.geolocation) {
-      setErr('Geolocation is not supported by this browser.')
-      return
+      toast.error('Geolocation not supported by this browser.'); return
     }
     navigator.geolocation.getCurrentPosition(async (p) => {
-      const lat = p.coords.latitude
-      const lon = p.coords.longitude
+      const lat = p.coords.latitude, lon = p.coords.longitude
       setPos({ lat, lon })
       setLoading(true)
       try {
@@ -49,36 +58,61 @@ export default function Hospitals() {
         setPlaces(list)
         localStorage.setItem('hospitals_cache', JSON.stringify(list))
       } catch {
-        setErr('Overpass API issue — showing last cached results.')
+        toast.warning('Overpass API issue — showing cached results if available.')
         const cached = localStorage.getItem('hospitals_cache')
         if (cached) setPlaces(JSON.parse(cached) as OSMElement[])
       } finally {
         setLoading(false)
       }
-    }, () => setErr('Location permission denied.'))
+    }, () => toast.error('Location permission denied.'))
   }, [])
 
+  const sorted: WithDist[] = useMemo(() => {
+    return places
+      .map<WithDist>((e) => {
+        const c = isNode(e) ? { lat: e.lat, lon: e.lon } : e.center
+        const d = pos && c ? km(pos.lat, pos.lon, c.lat, c.lon) : Number.POSITIVE_INFINITY
+        return { e, d }
+      })
+      .sort((a, b) => a.d - b.d)
+  }, [places, pos])
+
   return (
-    <main className="p-6 space-y-4">
+    <main className="py-6 space-y-4">
       <h1 className="text-2xl font-bold">Nearby hospitals</h1>
-      {err && <p role="alert" className="text-red-600">{err}</p>}
-      {!pos && !err && <p>Getting your location…</p>}
+      {!pos && <p>Getting your location…</p>}
       {pos && <Map lat={pos.lat} lon={pos.lon} />}
 
-      {loading && <p>Loading facilities…</p>}
+      {loading && (
+        <div className="rc-card rc-card-pad animate-pulse space-y-2">
+          <div className="h-4 bg-slate-200 rounded w-1/3"></div>
+          <div className="h-4 bg-slate-200 rounded w-1/2"></div>
+          <div className="h-4 bg-slate-200 rounded w-2/3"></div>
+        </div>
+      )}
 
-      <ul className="space-y-2">
-        {places.map((e) => {
+      <ul className="grid gap-3">
+        {sorted.map(({ e, d }) => {
           const center = isNode(e) ? { lat: e.lat, lon: e.lon } : e.center
+          const title = e.tags?.name ?? 'Hospital'
+          const dist = isFinite(d) ? `${d.toFixed(1)} km` : ''
+          const maps = center ? `https://www.google.com/maps?q=${center.lat},${center.lon}` : '#'
           return (
-            <li key={e.id} className="p-3 rounded-xl border">
-              <div className="font-medium">{e.tags?.name ?? 'Hospital'}</div>
-              <div className="text-sm opacity-70">
-                {center ? `${center.lat.toFixed(5)}, ${center.lon.toFixed(5)}` : ''}
+            <li key={e.id} className="rc-card rc-card-pad">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="font-semibold">{title}</div>
+                  <div className="text-sm opacity-70">
+                    {center ? `${center.lat.toFixed(5)}, ${center.lon.toFixed(5)}` : ''}
+                  </div>
+                </div>
+                <div className="text-sm font-medium">{dist}</div>
               </div>
-              {e.tags?.addr_full && (
-                <div className="text-sm opacity-70">{e.tags.addr_full}</div>
-              )}
+              <div className="mt-2">
+                <a href={maps} target="_blank" className="rc-btn rc-btn-ghost" rel="noreferrer">
+                  Open in Maps
+                </a>
+              </div>
             </li>
           )
         })}
